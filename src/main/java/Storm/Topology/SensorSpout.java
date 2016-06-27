@@ -9,6 +9,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -39,21 +40,22 @@ public class SensorSpout extends BaseRichSpout {
         try {
             serverSocket=new ServerSocket();
             serverSocket.bind(new InetSocketAddress(spoutParams.ipAddress,spoutParams.port));
+            socket=serverSocket.accept();
         } catch (IOException e) {
             System.out.println("ServerSocket Initial failed!" + e.getMessage());
         }
     }
 
     public void nextTuple() {
-        try {
-            socket=serverSocket.accept();
-        } catch (IOException e) {
-            System.out.println("socket accept error!" + e.getMessage());
-        }
+        System.out.println("spout run again!");
         RecieveData recieveData=new RecieveData(spoutParams);
         List<SOSWrapper> sosWrappers= recieveData.RecieveMessage(socket);
-        for (SOSWrapper sosWrapper:sosWrappers){
-            this.collector.emit(new Values(sosWrapper));
+        //if get the sos value ,soswrappers will not be null
+        if (sosWrappers!=null) {
+            for (SOSWrapper sosWrapper : sosWrappers) {
+                this.collector.emit(new Values(sosWrapper));
+            }
+            Utils.sleep(spoutParams.sleepTime);
         }
 
     }

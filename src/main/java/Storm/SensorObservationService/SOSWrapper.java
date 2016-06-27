@@ -131,8 +131,7 @@ public class SOSWrapper implements Serializable {
 
         } catch (DocumentException e) {
             System.out.println("open InsertObservation.xml doucunment error!"+e.getMessage());
-        }
-        System.out.println(result);
+        }//System.out.println(result);
 
         return result;
     }

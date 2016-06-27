@@ -233,7 +233,7 @@ public class SensorGetAndInsert {
         SAXReader saxReader1=new SAXReader();
         //this is needed in windows system but must be deleted in Linux system
         //due to the different encoding
-        //saxReader1.setEncoding("GB2312");
+        saxReader1.setEncoding("GB2312");
 
         Map nameSpace1=new HashMap();//xml NameSpace
         nameSpace1.put("sml","http://www.opengis.net/sensorML/1.0.1");

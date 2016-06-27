@@ -1,6 +1,8 @@
 package Storm.Topology;
 
+import Storm.DataBaseOperation.DBInitial;
 import Storm.DataBaseOperation.SensorGetAndInsert;
+import Storm.SensorConfigReader;
 import Storm.SensorObservationService.SpoutParams;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -17,10 +19,14 @@ import org.apache.storm.utils.Utils;
  */
 public class ObservationRecieveTopology {
     public static void main(String[] args) throws InvalidTopologyException, AuthorizationException, AlreadyAliveException {
-        String stationID="";
+        String stationID="urn:liesmars:insitusensor:platform:BaoxieWeatherSoilStation1";
         String spoutID="Senor_Spout";
         String blotID="Blot_ID";
         String topologyName="Station";
+
+        //read properties and initial database
+        SensorConfigReader.reader();
+        DBInitial.initial();
 
         SpoutParams spoutParams= SensorGetAndInsert.getSpoutParams(stationID);
         SensorSpout sensorSpout=new SensorSpout();

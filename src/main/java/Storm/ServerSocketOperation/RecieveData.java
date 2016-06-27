@@ -4,6 +4,7 @@ import Storm.SensorObservationService.SOSWrapper;
 import Storm.SensorObservationService.SpoutParams;
 import Storm.ServerSocketOperation.Protocol.CRC16;
 import Storm.ServerSocketOperation.Protocol.Moudus;
+import Storm.ServerSocketOperation.Protocol.XPH;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,18 +35,21 @@ public class RecieveData {
 
             System.out.print("get start!");
             OutputStream outputStream=socketClient.getOutputStream();//send the command to sensors by the socket outputstream
-            InputStream inputStream=socketClient.getInputStream();//get the returned result by the socket
-
             byte[] sendData=null;
             //use different protocol to sendData
             if(spoutParams.protocol.equals("modbus")){
                 sendData= Moudus.getSendData(spoutParams);
-            }else {
+            }else if(spoutParams.protocol.equals("xph")){
+                sendData= XPH.getSendData(spoutParams);
+            }
+            else {
                 System.out.println("Unkown Protocol!");
                 Thread.interrupted();
             }
             outputStream.write(sendData);//use outputstream to send data
             outputStream.flush();
+
+            InputStream inputStream=socketClient.getInputStream();//get the returned result by the socket
             //recieved data to store in recievedData bytes
             byte[] recievedData=new byte[1024];
 
@@ -53,6 +57,8 @@ public class RecieveData {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");//get the recieved data time
             String recieveDataTime=df.format(new Date());
 
+            // use flag to present the CRC16 check is pass or not,pass is true
+            boolean crcflag=false;
             //use modbus to analysis the reuslt to get the property value
             if(spoutParams.protocol.equals("modbus")) {
                 //For CRC check
@@ -61,16 +67,29 @@ public class RecieveData {
                     recieveBuffer[i]=recievedData[i];
                 }
                 //use CRC16 check the result
-                if (CRC16.CRCcheck(recieveBuffer)) {
+                if (crcflag=CRC16.CRCcheck(recieveBuffer)) {
+                    System.out.println("CRC check passed!");
                     sosWrappers = Moudus.solveRecievedData(spoutParams, recieveBuffer);
+                }
+            }else if (spoutParams.protocol.equals("xph")){
+                byte[] recieveBuffer=new byte[recieveDataLen];
+                for (int i=0;i<recieveDataLen;i++){
+                    recieveBuffer[i]=recievedData[i];
+                }
+                //use CRC16 check the result
+                if (crcflag=CRC16.CRCcheck(recieveBuffer)) {
+                    System.out.println("CRC check passed!");
+                    sosWrappers = XPH.solveRecievedData(spoutParams, recieveBuffer);
                 }
             }else {
                 System.out.println("Unkown protocol!");
                 Thread.interrupted();
             }
             //change the simpleTime
-            for (SOSWrapper sosWrapper:sosWrappers){
-                sosWrapper.setSimpleTime(recieveDataTime);
+            if (crcflag) {
+                for (SOSWrapper sosWrapper : sosWrappers) {
+                    sosWrapper.setSimpleTime(recieveDataTime);
+                }
             }
 
         } catch (IOException e) {

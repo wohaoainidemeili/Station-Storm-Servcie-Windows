@@ -1,6 +1,5 @@
 package Storm.ServerSocketOperation.Protocol;
 
-
 import Storm.SensorConfigInfo;
 import Storm.SensorObservationService.ObsProperty;
 import Storm.SensorObservationService.SOSWrapper;
@@ -11,33 +10,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * the modbus protocol to solve the recieved data
- * Created by Yuan on 2016/4/19.
+ * Created by Yuan on 2016/5/17.
  */
-public class Moudus {
-    /**
-     *  create the query data command
-     * @param spoutParams the station parameters
-     * @return the query command
-     */
+public class XPH {
+
     public static byte[] getSendData(SpoutParams spoutParams){
-        byte[] sendData=new byte[8];
+        byte[] sendData=new byte[6];
         sendData[0]= (byte)(spoutParams.slaveAddress);//the address of the equipment of sensors
 
         sendData[1]=3;//the read code
-        sendData[2]=(byte)(spoutParams.startingAddress>>>8);//the high code of the first cache in socket
-        sendData[3]=(byte)(spoutParams.startingAddress);// the low code of the first cache in socket
+        sendData[2]=0x00;//in xph protocol this byte must be 0x00
+        sendData[3]=0x00;// represent reading the real-time observation data
 
         sendData[4] = 0x00;//the high code of the last cache in socket
-        sendData[5]=0x10;//the low code of the last cache in socket
+        sendData[5]=0x00;//the low code of the last cache in socket
 
-        sendData[6] = 0x00;//CRC high code
-        sendData[7] = 0x00;//CRC low code
-
-        System.out.print("{"+sendData.toString()+"}");
         return CRC16.CRCCaculate(sendData);//caculate the CRC16 code (the 6 and 7 of sendData)
     }
-
     /**
      * use SOSWrapper to wrapper the sos information
      * @param spoutParams
@@ -57,8 +46,8 @@ public class Moudus {
                 obsProperty.setValue(GetValueFromRecieveData(recievedData,obsProperty.getStartpos()));
             }
             sosWrapper.setProperties(sensor.properties);
-            sosWrappers.add(sosWrapper);
         }
+
         return sosWrappers;
     }
 
@@ -70,7 +59,7 @@ public class Moudus {
      */
     public static double GetValueFromRecieveData(byte[] recieveData,int startPos){
         //change the low code and high code
-       short shortRes= (short)((recieveData[startPos]<<8)|(recieveData[startPos+1]&0xff));
+        short shortRes= (short)((recieveData[startPos]<<8)|(recieveData[startPos+1]&0xff));
         return shortRes*1.0/10.0;
     }
 }
